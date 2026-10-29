@@ -1,50 +1,34 @@
-name: Build mod
+name: Build Fabric Mod
 
 on:
   push:
     branches: [ "main", "master" ]
   pull_request:
-  workflow_dispatch:
+    branches: [ "main", "master" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Репозиторийді клондау
         uses: actions/checkout@v4
 
-      - name: Unzip project (if a zip was uploaded)
-        run: |
-          ZIP_FILE=$(find . -maxdepth 2 -name "*.zip" | head -n 1)
-          if [ -n "$ZIP_FILE" ]; then
-            echo "Табылды: $ZIP_FILE"
-            unzip -o "$ZIP_FILE" -d extracted
-          fi
-
-      - name: Find build.gradle folder
-        id: finddir
-        run: |
-          BUILD_DIR=$(find . -maxdepth 5 -name "build.gradle" -exec dirname {} \; | head -n 1)
-          echo "Табылған папка: $BUILD_DIR"
-          echo "dir=$BUILD_DIR" >> "$GITHUB_OUTPUT"
-
-      - name: Set up JDK 21
+      - name: JDK орнату (Java 21)
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
           java-version: '21'
+          distribution: 'temurin'
+          cache: 'gradle'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '9.2.0'
+      - name: Gradle Wrapper-ге орындау құқығын беру
+        run: chmod +x gradlew
 
-      - name: Build mod
-        working-directory: ${{ steps.finddir.outputs.dir }}
-        run: gradle build --no-daemon
+      - name: Gradle көмегімен модты жинау (Build)
+        run: ./gradlew build
 
-      - name: Upload jar
+      - name: Жинақталған файлды сақтау (Artifacts)
         uses: actions/upload-artifact@v4
         with:
-          name: alihbots-jar
-          path: ${{ steps.finddir.outputs.dir }}/build/libs/*.jar
+          name: AlihBots-Mod-Jar
+          path: build/libs/*.jar
